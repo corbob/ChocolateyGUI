@@ -112,25 +112,43 @@ namespace ChocolateyGui.Common.Windows.Startup
 
             try
             {
-                var userDatabase = new LiteDatabase($"filename={Path.Combine(Bootstrapper.LocalAppDataPath, "data.db")};upgrade=true");
+                LiteDatabase userDatabase;
 
-                LiteDatabase globalDatabase;
+                try
+                {
+                    userDatabase = new LiteDatabase($"filename={Path.Combine(Bootstrapper.LocalAppDataPath, "data.db")};upgrade=true");
+                }
+                catch (LiteException ex)
+                {
+                    Bootstrapper.Logger.Error(ex, Resources.Error_DatabaseAccessGui);
+                    throw new ApplicationException("Unable to access the user database. Not recoverable");
+                }
+
+                LiteDatabase globalDatabase = null;
                 if (Hacks.IsElevated)
                 {
-                    globalDatabase = new LiteDatabase($"filename={Path.Combine(Bootstrapper.AppDataPath, "Config", "data.db")};upgrade=true");
+                    try
+                    {
+                        globalDatabase = new LiteDatabase($"filename={Path.Combine(Bootstrapper.AppDataPath, "Config", "data.db")};upgrade=true");
+                    }
+                    catch (LiteException ex)
+                    {
+                        Bootstrapper.Logger.Error(ex, Resources.Error_DatabaseAccessGui);
+                    }
                 }
                 else
                 {
-                    if (!File.Exists(Path.Combine(Bootstrapper.AppDataPath, "Config", "data.db")))
-                    {
-                        // Since the global configuration database file doesn't exist, we must be running in a state where an administrator user
-                        // has never run Chocolatey GUI. In this case, use null, which will mean attempts to use the global database will be ignored.
-                        globalDatabase = null;
-                    }
-                    else
+                    if (File.Exists(Path.Combine(Bootstrapper.AppDataPath, "Config", "data.db")))
                     {
                         // Since this is a non-administrator user, they should only have read permissions to this database
-                        globalDatabase = new LiteDatabase($"filename={Path.Combine(Bootstrapper.AppDataPath, "Config", "data.db")};readonly=true");
+                        try
+                        {
+                            globalDatabase = new LiteDatabase($"filename={Path.Combine(Bootstrapper.AppDataPath, "Config", "data.db")};readonly=true");
+                        }
+                        catch (LiteException ex)
+                        {
+                            Bootstrapper.Logger.Error(ex, Resources.Error_DatabaseAccessGui);
+                        }
                     }
                 }
 
