@@ -136,6 +136,9 @@ namespace ChocolateyGui.Common.Windows
             catch (Exception ex)
             {
                 MessageBox.Show(string.Format(Resources.Fatal_Startup_Error_Formatted, ex.Message));
+                MessageBox.Show("Message box number 1");
+                MessageBox.Show("Message box number 2");
+                MessageBox.Show("Message box number 3");
                 Logger.Fatal(ex, Resources.Fatal_Startup_Error);
                 await OnExitAsync();
             }
